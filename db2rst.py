@@ -4,7 +4,7 @@
     DocBook to ReST converter
     =========================
     This script may not work out of the box, but is easy to extend.
-    If you extend it, please send me a patch: wojdyr at gmail. 
+    If you extend it, please send me a patch: wojdyr at gmail.
 
     Docbook has >400 elements, most of them are not supported (yet).
     ``pydoc db2rst`` shows the list of supported elements.
@@ -127,16 +127,16 @@ class Convert(object):
                 #self._warn(" ... from path: %s" % self._get_path(el))
                 _not_handled_tags.add(el.tag)
             return self._concat(el)
-    
+
     def _warn(self, s):
         sys.stderr.write("WARNING: %s\n" % s)
-    
+
     def _supports_only(self, el, tags):
         "print warning if there are unexpected children"
         for i in el.getchildren():
             if i.tag not in tags:
                 self._warn("%s/%s skipped." % (el.tag, i.tag))
-    
+
     def _what(self, el):
         "returns string describing the element, such as <para> or Comment"
         if isinstance(el.tag, basestring):
@@ -145,13 +145,13 @@ class Convert(object):
             return "Comment"
         else:
             return str(el)
-    
+
     def _has_only_text(self, el):
         "print warning if there are any children"
         if el.getchildren():
             self._warn("children of %s are skipped: %s" % (self._get_path(el),
                                   ", ".join(self._what(i) for i in el.getchildren())))
-    
+
     def _has_no_text(self, el):
         "print warning if there is any non-blank text"
         if el.text is not None and not el.text.isspace():
@@ -159,10 +159,10 @@ class Convert(object):
         for i in el.getchildren():
             if i.tail is not None and not i.tail.isspace():
                 self._warn("skipping tail of <%s>: %s" % (self._get_path(i), i.tail))
-    
+
     def _no_special_markup(self, el):
         return self._concat(el)
-    
+
     def _remove_indent_and_escape(self, s):
         "remove indentation from the string s, escape some of the special chars"
         s = "\n".join(i.lstrip().replace("\\", "\\\\") for i in s.splitlines())
@@ -175,7 +175,7 @@ class Convert(object):
                    r"\1\\\2\3", # insert backslash
                    s)
         return s
-    
+
     def _concat(self, el):
         "concatate .text with children (self._conv'ed to text) and their tails"
         s = ""
@@ -191,36 +191,36 @@ class Convert(object):
                     s += i.tail[0]
                 s += self._remove_indent_and_escape(i.tail)
         return s
-    
+
     def _original_xml(self, el):
         return ET.tostring(el, with_tail=False)
-    
+
     def _no_markup(self, el):
         s = ET.tostring(el, with_tail=False)
         s = re.sub(r"<.+?>", " ", s) # remove tags
         s = re.sub(r"\s+", " ", s) # replace all blanks with single space
         return s
-    
+
     def _get_level(self, el):
         "return number of ancestors"
         return sum(1 for i in el.iterancestors())
-    
+
     def _get_path(self, el):
         t = [el] + list(el.iterancestors())
         return "/".join(str(i.tag) for i in reversed(t))
-    
+
     def _make_title(self, t, level):
         if level == 1:
             return "\n\n" + "=" * len(t) + "\n" + t + "\n" + "=" * len(t)
-        char = ["#", "=", "-", "~", "^", ".", "*", "+", "_", ",", ":", "'", 
-                "!", "?", '"', '$', '%', '&', ';', '(', ')', '/', '<', '>', 
+        char = ["#", "=", "-", "~", "^", ".", "*", "+", "_", ",", ":", "'",
+                "!", "?", '"', '$', '%', '&', ';', '(', ')', '/', '<', '>',
                 "@", "[", "]", "`", "{", "}", "|", "\\", ]
         return "\n\n" + t + "\n" + char[level-2] * len(t)
-    
+
     def _join_children(self, el, sep):
         self._has_no_text(el)
         return sep.join(self._conv(i) for i in el.getchildren())
-    
+
     def _block_separated_with_blank_line(self, el):
         pi = [i for i in el.iterchildren() if isinstance(i, ET._ProcessingInstruction)]
         if pi and 'filename=' in pi[0].text:
@@ -236,7 +236,7 @@ class Convert(object):
                 s += "\n\n" + _buffer
                 _buffer = ""
             return s
-    
+
     def _indent(self, el, indent, first_line=None):
         "returns indented block with exactly one blank line at the beginning"
         lines = [" "*indent + i for i in self._concat(el).splitlines()
@@ -245,44 +245,44 @@ class Convert(object):
             # replace indentation of the first line with prefix `first_line'
             lines[0] = first_line + lines[0][indent:]
         return "\n\n" + "\n".join(lines)
-    
+
     def _normalize_whitespace(self, s):
         return " ".join(s.split())
-    
+
     ###################           DocBook elements        #####################
-    
+
     # special "elements"
-    
+
     def Comment(self, el):
         return self._indent(el, 12, ".. COMMENT: ")
-    
-    
+
+
     # general inline elements
-    
+
     def e_emphasis(self, el):
         return "*%s*" % self._concat(el).strip()
     phrase = e_emphasis
     citetitle = e_emphasis
     replaceable = e_emphasis
-    
+
     def e_firstterm(self, el):
         self._has_only_text(el)
         return ":dfn:`%s`" % el.text
-    
+
     def e_acronym(self, el):
         if el.attrib.get('condition'):
             return u":abbr:`%s (%s)`" % (el.text, el.attrib['condition'])
         else:
             return u":abbr:`%s`" % (el.text, )
-    
+
     def e_userinput(self, el):
         return u":kbd:`%s`" % (el.text, )
 
     def e_quote(self, el):
         return u'"%s"' % (el.text, )
-    
+
     # links
-    
+
     def e_ulink(self, el):
         url = el.get("url")
         text = self._concat(el).strip()
@@ -294,33 +294,33 @@ class Convert(object):
             return "`%s <%s>`_" % (text, url)
         else:
             return "`%s <%s>`_" % (url, url)
-    
+
     # TODO:
-    # put labels where referenced ids are 
+    # put labels where referenced ids are
     # e.g. <appendix id="license"> -> .. _license:\n<appendix>
     # if the label is not before title, we need to give explicit title:
     # :ref:`Link title <label-name>`
     # (in DocBook was: the section called “Variables”)
-    
+
     def e_xref(self, el):
         return ":ref:`%s`" % el.get("linkend")
-    
+
     def e_link(self, el):
         return ":ref:`%s <%s>`" % (self._concat(el).strip(), el.get("linkend"))
-    
-    
+
+
     # math and media
     # the DocBook syntax to embed equations is sick. Usually, (inline)equation is
     # a (inline)mediaobject, which is imageobject + textobject
-    
+
     def e_inlineequation(self, el):
         self._supports_only(el, ("inlinemediaobject",))
         return self._concat(el).strip()
-    
+
     def e_informalequation(self, el):
         self._supports_only(el, ("mediaobject",))
         return self._concat(el)
-    
+
     def e_equation(self, el):
         self._supports_only(el, ("title", "mediaobject"))
         title = el.find("title")
@@ -331,7 +331,7 @@ class Convert(object):
         for mo in el.findall("mediaobject"):
             s += "\n" + self._conv(mo)
         return s
-    
+
     def e_mediaobject(self, el, substitute=False):
         global _substitutions
         self._supports_only(el, ("imageobject", "textobject"))
@@ -362,22 +362,22 @@ class Convert(object):
             return img, symbols
         else:
             return img
-    
+
     def e_inlinemediaobject(self, el):
         global _buffer
         subst, symbols = self.mediaobject(el, substitute=True)
         _buffer += subst
         return "".join("|%s|" % i for i in symbols)
-    
+
     def e_subscript(self, el):
         return "\ :sub:`%s`" % self._concat(el).strip()
-    
+
     def e_superscript(self, el):
         return "\ :sup:`%s`" % self._concat(el).strip()
-    
-    
+
+
     # GUI elements
-    
+
     def e_menuchoice(self, el):
         if all(i.tag in ("guimenu", "guimenuitem") for i in el.getchildren()):
             self._has_no_text(el)
@@ -385,7 +385,7 @@ class Convert(object):
                     " --> ".join(i.text for i in el.getchildren())
         else:
             return self._concat(el)
-    
+
     def e_guilabel(self, el):
         self._has_only_text(el)
         return ":guilabel:`%s`" % el.text.strip()
@@ -393,58 +393,59 @@ class Convert(object):
     e_guimenu = e_guilabel
     e_guimenuitem = e_guilabel
     e_mousebutton = _no_special_markup
-    
-    
+
+
     # system elements
-    
+
     def e_keycap(self, el):
         self._has_only_text(el)
         return ":kbd:`%s`" % el.text
-    
+
     def e_application(self, el):
         self._has_only_text(el)
         return ":program:`%s`" % el.text.strip()
-    
+
     def e_userinput(self, el):
         return "``%s``" % self._concat(el).strip()
-    
+
     e_systemitem = e_userinput
     e_prompt = e_userinput
-    
+
     def e_filename(self, el):
         self._has_only_text(el)
         return ":file:`%s`" % el.text
-    
+
     def e_command(self, el):
         return ":command:`%s`" % self._concat(el).strip()
-    
+    e_code = e_command
+
     def e_parameter(self, el):
         if el.get("class"): # this hack is specific for fityk manual
             return ":option:`%s`" % self._concat(el).strip()
         return self.e_emphasis(el)
-    
+
     def e_cmdsynopsis(self, el):
         # just remove all markup and remember to change it manually later
         return "\n\nCMDSYN: %s\n" % self._no_markup(el)
-    
-    
+
+
     # programming elements
-    
+
     def e_function(self, el):
         #self._has_only_text(el)
         #return ":func:`%s`" % self._concat(el)
         return "``%s``" % self._concat(el).strip()
-    
+
     def e_constant(self, el):
         self._has_only_text(el)
         #return ":constant:`%s`" % el.text
         return "``%s``" % ((el.text or '') + ''.join(map(self._conv, el.getchildren())))
-    
+
     e_varname = e_constant
-    
-    
+
+
     # popular block elements
-    
+
     def e_title(self, el):
         # Titles in some elements may be handled from the title's parent.
         t = self._concat(el).strip()
@@ -453,39 +454,40 @@ class Convert(object):
         ## title in elements other than the following will trigger assertion
         #if parent in ("book", "chapter", "section", "variablelist", "appendix"):
         return self._make_title(t, level)
-    
+
     def e_screen(self, el):
         return "\n::\n" + self._indent(el, 4) + "\n"
     e_literallayout = e_screen
     e_programlisting = e_screen
-    
+    e_computeroutput = e_screen
+
     def e_blockquote(self, el):
         return self._indent(el, 4)
-    
+
     e_book = _no_special_markup
     e_article = _no_special_markup
     e_para = _block_separated_with_blank_line
     e_section = _block_separated_with_blank_line
     e_appendix = _block_separated_with_blank_line
     e_chapter = _block_separated_with_blank_line
-    
-    
+
+
     # lists
-    
+
     def e_itemizedlist(self, el, bullet="-"):
         # ItemizedList ::= (ListItem+)
         s = ""
         for i in el.getchildren():
             s += self._indent(i, 2, bullet+" ")
         return s + "\n\n"
-    
+
     def e_orderedlist(self, el):
         # OrderedList ::= (ListItem+)
         return self.e_itemizedlist(el, bullet="#.")
-    
+
     def e_simplelist(self, el):
         # SimpleList ::= (Member+)
-        # The simplelist is the most complicated one. There are 3 kinds of 
+        # The simplelist is the most complicated one. There are 3 kinds of
         # SimpleList: Inline, Horiz and Vert.
         if el.get("type") == "inline":
             return self._join_children(el, ", ")
@@ -494,7 +496,7 @@ class Convert(object):
             # of columns equal el[columns]
             # but we simply transform it to bullet list
             return self.e_itemizedlist(el, bullet="+")
-    
+
     def e_variablelist(self, el):
         #VariableList ::= ((Title,TitleAbbrev?)?, VarListEntry+)
         #VarListEntry ::= (Term+,ListItem)
@@ -508,10 +510,10 @@ class Convert(object):
             s += ", ".join(self._concat(i).strip() for i in entry.findall("term"))
             s += self._indent(entry.find("listitem"), 4)[1:]
         return s
-    
-    
+
+
     # admonition directives
-    
+
     def e_note(self, el):
         return self._indent(el, 3, ".. note:: ")
     def e_caution(self, el):
@@ -522,60 +524,60 @@ class Convert(object):
         return self._indent(el, 3, ".. tip:: ")
     def e_warning(self, el):
         return self._indent(el, 3, ".. warning:: ")
-    
-    
+
+
     # bibliography
-    
+
     def e_author(self, el):
         self._supports_only(el, ("firstname", "surname"))
         return el.findtext("firstname") + " " + el.findtext("surname")
-    
+
     e_editor = e_author
-    
+
     def e_authorgroup(self, el):
         return self._join_children(el, ", ")
-    
+
     def e_biblioentry(self, el):
         self._supports_only(el, ("abbrev", "authorgroup", "author", "editor", "title",
                             "publishername", "pubdate", "address"))
         s = "\n"
-    
+
         abbrev = el.find("abbrev")
         if abbrev is not None:
             self._has_only_text(abbrev)
             s += "[%s] " % abbrev.text
-    
+
         auth = el.find("authorgroup")
         if auth is None:
             auth = el.find("author")
         if auth is not None:
             s += "%s. " % self._conv(auth)
-    
+
         editor = el.find("editor")
         if editor is not None:
             s += "%s. " % self._conv(editor)
-    
+
         title = el.find("title")
         if title is not None:
             self._has_only_text(title)
             s += "*%s*. " % title.text.strip()
-    
+
         address = el.find("address")
         if address is not None:
             self._supports_only(address, ("otheraddr",))
             s += "%s " % address.findtext("otheraddr")
-    
+
         publishername = el.find("publishername")
         if publishername is not None:
             self._has_only_text(publishername)
             s += "%s. " % publishername.text
-    
+
         pubdate = el.find("pubdate")
         if pubdate is not None:
             self._has_only_text(pubdate)
             s += "%s. " % pubdate.text
         return s
-    
+
     def e_bibliography(self, el):
         self._supports_only(el, ("biblioentry",))
         return self._make_title("Bibliography", 2) + "\n" + self._join_children(el, "\n")
@@ -598,7 +600,7 @@ class Convert(object):
             text += fmt % tuple(map(self._conv, row.findall('entry')))
         text += fmt % tuple(['=' * size for size in colsizes])
         return text
-        
+
 
 if __name__ == '__main__':
     _main()
