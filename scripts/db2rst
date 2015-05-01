@@ -95,7 +95,7 @@ def _main():
         c.write("exclude_patterns = ['_build']\n")
         c.close()
     else:
-        print obj
+        print(obj)
 
 class Convert(object):
     def __init__(self, el):
@@ -600,7 +600,6 @@ class Convert(object):
             text += fmt % tuple(map(self._conv, row.findall('entry')))
         text += fmt % tuple(['=' * size for size in colsizes])
         return text
-
 
 if __name__ == '__main__':
     _main()
