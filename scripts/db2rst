@@ -3,6 +3,7 @@
 """
     DocBook to ReST converter
     =========================
+
     This script may not work out of the box, but is easy to extend.
     If you extend it, please send me a patch: wojdyr at gmail.
 
@@ -445,6 +446,13 @@ class Convert(object):
 
 
     # popular block elements
+
+    def e_abstract(self, el):
+        # Handle an abstract as a meta element, with its text as the
+        # description.
+        self._supports_only(el, ("para", "simpara"))
+        meta_text = '\n.. meta::\n   :description: %s\n'
+        return (meta_text % self._concat(el).strip())
 
     def e_title(self, el):
         # Titles in some elements may be handled from the title's parent.
